@@ -4,20 +4,25 @@ import { usePathname } from "next/navigation";
 import { useEffect } from "react";
 import { useStore } from "@/lib/store";
 import { Toasts } from "./Toasts";
+import { CollabHost } from "./round/CollabHost";
+import { useAuth } from "@/lib/auth";
+import { supabaseConfigured } from "@/lib/supabase/client";
 
 const NAV = [
   { href: "/", label: "Dashboard", icon: "▦", ready: true },
   { href: "/rounds", label: "My Rounds", icon: "≡", ready: true },
-  { href: "/evidence", label: "Evidence Library", icon: "❝", ready: false },
-  { href: "/blocks", label: "Blocks", icon: "▤", ready: false },
-  { href: "/documents", label: "Speech Documents", icon: "✎", ready: false },
-  { href: "/shared", label: "Shared With Me", icon: "⇄", ready: false },
+  { href: "/evidence", label: "Evidence Library", icon: "❝", ready: true },
+  { href: "/blocks", label: "Blocks", icon: "▤", ready: true },
+  { href: "/documents", label: "Speech Documents", icon: "✎", ready: true },
+  { href: "/shared", label: "Shared With Me", icon: "⇄", ready: true },
   { href: "/settings", label: "Settings", icon: "⚙", ready: true },
 ];
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const path = usePathname();
   const init = useStore((s) => s.init);
+  const user = useAuth((s) => s.user);
+  useEffect(() => { useAuth.getState().init(); }, []);
   useEffect(() => {
     void init();
     try { document.documentElement.classList.toggle("compact", localStorage.getItem("openflow:density") === "compact"); } catch {}
@@ -54,10 +59,17 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             );
           })}
         </ul>
+        {!compact && (
+          <div className="border-t border-line p-3 text-[12px]">
+            {user ? <div className="flex items-center justify-between gap-2"><span className="truncate text-muted" title={user.email}>{user.email}</span><button className="text-accent" onClick={() => void useAuth.getState().signOut()}>Sign out</button></div>
+              : <Link href="/login" className="text-accent">{supabaseConfigured() ? "Sign in" : "Local mode · sign-in off"}</Link>}
+          </div>
+        )}
         {!compact && <p className="border-t border-line p-3 text-[11px] leading-snug text-muted">Public Forum only. No AI — every argument and decision is yours.</p>}
       </nav>
       <main className="min-w-0 flex-1 overflow-hidden">{children}</main>
       <Toasts />
+      <CollabHost />
     </div>
   );
 }

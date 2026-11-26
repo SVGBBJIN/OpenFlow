@@ -30,6 +30,8 @@ interface S {
   toasts: Toast[];
   keymap: Keymap;
   paletteOpen: boolean;
+  readOnly: boolean;
+  collabUndo: { undo(): void; redo(): void } | null;
 
   init(): Promise<void>;
   createRound(o: { title?: string; side?: Side; opponent?: string; partner?: string; tournament?: string }): string;
@@ -38,6 +40,7 @@ interface S {
   restoreRound(id: string): void;
   purgeRound(id: string): void;
   openRound(id: string): Promise<void>;
+  importRound(r: Round, args: ArgMap): Promise<void>;
   setFlow(f: Side): void;
   select(id: string | null): void;
   beginEdit(id: string, seed?: string | null): void;
@@ -102,7 +105,7 @@ export const useStore = create<S>((set, get) => {
   /** Apply a structural change, recording one undo step. */
   const commit = (next: ArgMap, opts: { history?: boolean } = {}) => {
     const s = get();
-    if (next === s.args) return;
+    if (next === s.args || s.readOnly) return;
     const r = round();
     set({
       args: next,
@@ -114,13 +117,14 @@ export const useStore = create<S>((set, get) => {
   };
 
   const startEditing = (id: string, seed: string | null = null) => {
+    if (get().readOnly) return;
     set({ selectedId: id, editingId: id, editSeed: seed, editBase: get().args });
   };
 
   return {
     ready: false, rounds: {}, currentId: null, args: {}, past: [], future: [],
     flow: "pro", selectedId: null, editingId: null, editSeed: null, editBase: null,
-    lastCreated: null, pick: null, saveState: "saved", toasts: [], keymap: DEFAULT_KEYMAP, paletteOpen: false,
+    lastCreated: null, pick: null, saveState: "saved", toasts: [], keymap: DEFAULT_KEYMAP, paletteOpen: false, readOnly: false, collabUndo: null,
 
     async init() {
       if (get().ready) return;
@@ -142,6 +146,7 @@ export const useStore = create<S>((set, get) => {
       return id;
     },
     updateRound(id, patch) {
+      if (get().readOnly && id === get().currentId) return;
       set((s) => ({ rounds: { ...s.rounds, [id]: { ...s.rounds[id], ...patch, updatedAt: Date.now() } } }));
       scheduleSave();
     },
@@ -158,6 +163,13 @@ export const useStore = create<S>((set, get) => {
       });
       void deleteArgs(id);
       void saveRounds(Object.values(get().rounds));
+    },
+
+    async importRound(r, args) {
+      set((s) => ({ rounds: { ...s.rounds, [r.id]: r } }));
+      await saveArgs(r.id, args);
+      await saveRounds(Object.values(get().rounds));
+      if (get().currentId === r.id) set({ currentId: null });
     },
 
     async openRound(id) {
@@ -304,7 +316,10 @@ export const useStore = create<S>((set, get) => {
     },
 
     undo() {
-      const s = get(); if (!s.past.length) return;
+      const s = get();
+      if (s.readOnly) return;
+      if (s.collabUndo) return s.collabUndo.undo();
+      if (!s.past.length) return;
       const prev = s.past[s.past.length - 1];
       set({
         args: prev, past: s.past.slice(0, -1), future: [s.args, ...s.future].slice(0, 200),
@@ -314,7 +329,10 @@ export const useStore = create<S>((set, get) => {
       scheduleSave();
     },
     redo() {
-      const s = get(); if (!s.future.length) return;
+      const s = get();
+      if (s.readOnly) return;
+      if (s.collabUndo) return s.collabUndo.redo();
+      if (!s.future.length) return;
       const [next, ...rest] = s.future;
       set({
         args: next, past: [...s.past, s.args], future: rest,

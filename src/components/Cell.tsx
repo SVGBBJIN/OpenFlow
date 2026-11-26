@@ -14,6 +14,7 @@ export interface CellProps {
   editing: boolean;
   related: boolean;
   dim: boolean;
+  peers?: { name: string; color: string; editing: boolean }[];
   pickable: boolean;
   onSelect(id: string): void;
   onEdit(id: string): void;
@@ -28,10 +29,11 @@ export const Cell = memo(function Cell(p: CellProps) {
       role="treeitem"
       aria-selected={p.selected}
       className={`cell st-${a.status} ${p.selected ? "sel" : ""} ${p.related ? "rel" : ""} ${p.dim ? "dim" : ""} ${p.pickable ? "pick" : ""}`}
-      style={{ gridColumn: p.col + 1, gridRow: p.row + 2, marginTop: p.rootStart && p.row > 0 ? 14 : 0 }}
+      style={{ gridColumn: p.col + 1, gridRow: p.row + 2, marginTop: p.rootStart && p.row > 0 ? 14 : 0, ...(p.peers?.length ? { outline: `2px solid ${p.peers[0].color}`, outlineOffset: 1 } : {}) }}
       onMouseDown={(e) => { if (!p.editing) { e.preventDefault(); } p.onSelect(a.id); }}
       onDoubleClick={() => p.onEdit(a.id)}
     >
+      {p.peers?.map((u) => <span key={u.name} className="peer-badge" style={{ background: u.color, right: 6 }}>{u.name}{u.editing ? " ✎" : ""}</span>)}
       {(a.priority > 0 || a.isTurn || a.extendsId || a.status !== "active" || a.tags.length > 0) && (
         <div className="mb-0.5 flex flex-wrap items-center gap-1">
           {a.priority > 0 && <span className="chip text-warn" title={`Priority ${a.priority}`}>{"!".repeat(a.priority)}</span>}

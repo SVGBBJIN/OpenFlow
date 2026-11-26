@@ -3,6 +3,7 @@ import { useCallback, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { layoutFlow } from "@/lib/layout";
 import { useStore } from "@/lib/store";
 import type { Round } from "@/lib/types";
+import { useCollab } from "@/lib/collab/session";
 import { Cell } from "./Cell";
 
 interface Box { x: number; y: number; w: number; h: number }
@@ -14,6 +15,12 @@ export function FlowGrid({ round }: { round: Round }) {
   const editingId = useStore((s) => s.editingId);
   const pick = useStore((s) => s.pick);
   const { select, beginEdit, toggleCollapse } = useStore.getState();
+  const peers = useCollab((s) => s.peers);
+  const peerMap = useMemo(() => {
+    const m: Record<string, { name: string; color: string; editing: boolean }[]> = {};
+    for (const u of peers) { if (u.self) continue; const id = u.editingId ?? u.selectedId; if (id) (m[id] ??= []).push({ name: u.name, color: u.color, editing: !!u.editingId }); }
+    return m;
+  }, [peers]);
   const gridRef = useRef<HTMLDivElement>(null);
   const [boxes, setBoxes] = useState<Record<string, Box>>({});
 
@@ -127,6 +134,7 @@ export function FlowGrid({ round }: { round: Round }) {
               editing={editingId === id}
               related={related.has(id)}
               dim={!!selectedId && selectedId !== id && !related.has(id) && false}
+              peers={peerMap[id]}
               pickable={!!pick && id !== pick.from}
               onSelect={(x) => (pick && x !== pick.from ? useStore.getState().confirmPick(x) : select(x))}
               onEdit={beginEdit}

@@ -7,6 +7,7 @@ import { FlowGrid } from "./FlowGrid";
 import { Inspector } from "./Inspector";
 import { Palette } from "./Palette";
 import { RoundTabs } from "./round/RoundShell";
+import { PresenceBar } from "./round/PresenceBar";
 import { useLib } from "@/lib/lib-store";
 
 const STATUS_ACTIONS: Partial<Record<ActionId, Status>> = {
@@ -110,8 +111,9 @@ export function FlowEditor({ roundId }: { roundId: string }) {
         </div>
         <span className="text-[11px] text-muted">{round.side === "pro" ? "You: Pro" : "You: Con"}</span>
         <div className="ml-auto flex items-center gap-1">
-          <button className="btn btn-ghost" disabled={!past} onClick={() => useStore.getState().undo()} title={`Undo (${prettyCombo(keymap.undo)})`}>↶</button>
-          <button className="btn btn-ghost" disabled={!future} onClick={() => useStore.getState().redo()} title={`Redo (${prettyCombo(keymap.redo)})`}>↷</button>
+          <PresenceBar />
+          <button className="btn btn-ghost" disabled={!past && !useStore.getState().collabUndo} onClick={() => useStore.getState().undo()} title={`Undo (${prettyCombo(keymap.undo)})`}>↶</button>
+          <button className="btn btn-ghost" disabled={!future && !useStore.getState().collabUndo} onClick={() => useStore.getState().redo()} title={`Redo (${prettyCombo(keymap.redo)})`}>↷</button>
           <button className="btn btn-ghost" onClick={() => useStore.getState().setPalette(true)} title="Command palette">/ commands</button>
           <span className={`w-16 text-right text-[11px] ${saveState === "error" ? "text-bad" : "text-muted"}`} aria-live="polite">{saveState === "saving" ? "Saving…" : saveState === "error" ? "Save failed" : "Saved"}</span>
           <button className="btn btn-ghost" onClick={() => setPanel(!panel)} title="Toggle side panel">{panel ? "⟩" : "⟨"}</button>

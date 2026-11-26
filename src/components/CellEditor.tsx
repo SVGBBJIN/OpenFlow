@@ -4,7 +4,10 @@ import StarterKit from "@tiptap/starter-kit";
 import Highlight from "@tiptap/extension-highlight";
 import Bold from "@tiptap/extension-bold";
 import Strike from "@tiptap/extension-strike";
-import { useEffect, useLayoutEffect, useRef } from "react";
+import Collaboration from "@tiptap/extension-collaboration";
+import CollaborationCaret from "@tiptap/extension-collaboration-caret";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { getSession, localIdentity } from "@/lib/collab/session";
 import { actionFor, type ActionId } from "@/lib/keymap";
 import { isEmptyHtml, sanitizeHtml } from "@/lib/sanitize";
 import { useStore } from "@/lib/store";
@@ -28,18 +31,29 @@ const STATUS_ACTIONS: Partial<Record<ActionId, Status>> = {
 export function CellEditor({ id, initial }: { id: string; initial: string }) {
   const seed = useRef(useStore.getState().editSeed);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Live session: this cell's text is a shared CRDT fragment so partners can type in it simultaneously.
+  const [collab] = useState(() => {
+    const sess = getSession();
+    if (!sess || !sess.canWrite) return null;
+    const fragment = sess.fragment(id);
+    // Resync the fragment to the argument's stored text unless a partner is already typing here.
+    if (!sess.othersEditing(id) && fragment.length > 0) fragment.delete(0, fragment.length);
+    return { sess, fragment, user: localIdentity() };
+  });
 
   const editor = useEditor({
     immediatelyRender: true,
     autofocus: "end",
-    content: initial,
+    content: collab ? undefined : initial,
     extensions: [
       StarterKit.configure({
+        undoRedo: collab ? false : undefined,
         heading: false, blockquote: false, codeBlock: false, code: false, horizontalRule: false,
         bulletList: false, orderedList: false, listItem: false, listKeymap: false,
         link: false, underline: false, bold: false, strike: false, dropcursor: false, gapcursor: false,
       }),
       BoldNoKeys, StrikeNoKeys, HighlightNoKeys,
+      ...(collab ? [Collaboration.configure({ fragment: collab.fragment }), CollaborationCaret.configure({ provider: { awareness: collab.sess.awareness }, user: collab.user })] : []),
     ],
     editorProps: {
       attributes: { class: "cell-editor", "aria-label": "Argument text", "data-editing": "true" },
@@ -84,6 +98,7 @@ export function CellEditor({ id, initial }: { id: string; initial: string }) {
       },
     },
     onCreate({ editor: ed }) {
+      if (collab && collab.fragment.length === 0 && initial) ed.chain().setMeta("addToHistory", false).setContent(initial, { emitUpdate: false }).run();
       if (seed.current) { ed.commands.insertContent(seed.current); seed.current = null; useStore.setState({ editSeed: null }); }
     },
     onUpdate({ editor: ed }) {

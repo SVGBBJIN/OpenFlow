@@ -3,6 +3,7 @@ import Link from "next/link";
 import { useEffect } from "react";
 import { useStore } from "@/lib/store";
 import { useLib } from "@/lib/lib-store";
+import { PresenceBar } from "./PresenceBar";
 
 export type RoundTab = "flow" | "summary" | "final-focus" | "tracker" | "review" | "share";
 const TABS: { id: RoundTab; label: string; href: (id: string) => string }[] = [
@@ -39,7 +40,7 @@ export function RoundShell({ roundId, active, children, actions }: { roundId: st
       <header className="no-print flex h-11 shrink-0 items-center gap-3 border-b border-line bg-panel px-3">
         <span className="max-w-64 truncate text-[14px] font-medium">{round.title}</span>
         <RoundTabs roundId={roundId} active={active} />
-        <div className="ml-auto flex items-center gap-2">{actions}<span className="text-[11px] text-muted">{saveState === "saving" ? "Saving…" : "Saved"}</span></div>
+        <div className="ml-auto flex items-center gap-2"><PresenceBar />{actions}<span className="text-[11px] text-muted">{saveState === "saving" ? "Saving…" : "Saved"}</span></div>
       </header>
       <div className="min-h-0 flex-1">{currentId === roundId ? children : <p className="p-6 text-muted">Opening round…</p>}</div>
     </div>
