@@ -29,7 +29,38 @@ export interface Round {
   createdAt: number;
   updatedAt: number;
   deletedAt: number | null;
+  /** Speech-prep plans and review notes. All user-authored. */
+  plans?: Plans;
+  review?: Review;
+  completed?: boolean;
 }
+
+export const WEIGH_MECHANISMS = ["magnitude", "probability", "timeframe", "scope", "reversibility", "structural"] as const;
+export type WeighMechanism = (typeof WEIGH_MECHANISMS)[number];
+export interface WeighEntry { id: string; mechanism: WeighMechanism; text: string }
+export interface PlanItem {
+  id: string;
+  argId: string;
+  offense: boolean;
+  needsDefense: boolean;
+  voting: boolean;
+  responseIds: string[];
+  extraCardIds: string[];
+  weighing: WeighEntry[];
+  opposingIds: string[];
+  comparison: string;
+  note: string;
+}
+export interface SpeechPlan { items: PlanItem[]; weighingNotes: string; narrative: string; impactCalculus: string }
+export interface Plans { summary: SpeechPlan; finalFocus: SpeechPlan }
+export interface Review {
+  judge: string; ballot: string; rfd: string; judgeFeedback: string;
+  opponentStrategy: string; observations: string;
+  /** Entered by the user; never computed. */
+  result: "" | "win" | "loss";
+}
+export const emptyPlan = (): SpeechPlan => ({ items: [], weighingNotes: "", narrative: "", impactCalculus: "" });
+export const emptyReview = (): Review => ({ judge: "", ballot: "", rfd: "", judgeFeedback: "", opponentStrategy: "", observations: "", result: "" });
 
 /**
  * One cell on the flow. Relationships are explicit:
@@ -59,8 +90,29 @@ export interface Arg {
   extendsId: string | null;
   linkedIds: string[];
   evidenceIds: string[];
+  /** Library material inserted into this argument (snapshots that keep a link to their source). */
+  inserts: Insert[];
   createdAt: number;
   updatedAt: number;
+}
+
+export interface InsertEntry {
+  id: string;
+  /** Source library card, if any (kept so the original can be opened / refreshed). */
+  cardId: string | null;
+  tag: string;
+  citation: string;
+  /** Snapshot HTML with formatting + highlighting preserved. */
+  html: string;
+  kind: "card" | "text";
+}
+export interface Insert {
+  id: string;
+  /** Source block, if inserted from the block library. */
+  blockId: string | null;
+  name: string;
+  entries: InsertEntry[];
+  at: number;
 }
 
 export type ArgMap = Record<string, Arg>;

@@ -1,2 +1,2 @@
-import { ComingSoon } from "@/components/ComingSoon";
-export default function Page() { return <ComingSoon title="Blocks" phase={2} />; }
+import { BlockLibrary } from "@/components/blocks/BlockLibrary";
+export default function Page() { return <BlockLibrary />; }

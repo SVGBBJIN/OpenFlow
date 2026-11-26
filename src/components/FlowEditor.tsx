@@ -6,6 +6,7 @@ import type { Status } from "@/lib/types";
 import { FlowGrid } from "./FlowGrid";
 import { Inspector } from "./Inspector";
 import { Palette } from "./Palette";
+import { useLib } from "@/lib/lib-store";
 
 const STATUS_ACTIONS: Partial<Record<ActionId, Status>> = {
   statusActive: "active", statusAnswered: "answered", statusDropped: "dropped",
@@ -27,6 +28,7 @@ export function FlowEditor({ roundId }: { roundId: string }) {
   const [panel, setPanel] = useState(true);
 
   useEffect(() => { if (ready && round) void useStore.getState().openRound(roundId); }, [ready, round, roundId]);
+  useEffect(() => { void useLib.getState().load(); }, []);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {

@@ -60,3 +60,9 @@ body { background: var(--color-bg); color: var(--color-fg); font-family: var(--f
 .st-turned { border-left-color:var(--color-turn); }
 .st-unresolved { border-left-color:var(--color-warn); border-left-style:dashed; }
 .chip { display:inline-block; padding:0 5px; border-radius:3px; font-size:10px; line-height:16px; border:1px solid var(--color-line2); color:var(--color-muted); }
+
+.rich, .rich p { outline:none; margin:0 0 .5em; line-height:1.5; }
+.rich mark, .cell-body mark { background:#6b5b1a; color:#fff3b0; padding:0 1px; border-radius:2px; }
+.cell-body u { text-underline-offset:2px; }
+.cell-body p { margin:0 0 .4em; }
+.ProseMirror p.is-empty:first-child::before { color:#55618a; }

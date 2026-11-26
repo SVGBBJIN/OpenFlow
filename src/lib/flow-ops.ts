@@ -1,8 +1,7 @@
-import { nanoid } from "nanoid";
 import { childIndex } from "./layout";
 import type { Arg, ArgMap, Round, Side, Status } from "./types";
 
-export const newId = () => nanoid(10);
+export const newId = (): string => globalThis.crypto.randomUUID();
 
 export function blankArg(round: Round, over: Partial<Arg> & Pick<Arg, "flow" | "speechId">): Arg {
   const now = Date.now();
@@ -22,6 +21,7 @@ export function blankArg(round: Round, over: Partial<Arg> & Pick<Arg, "flow" | "
     extendsId: null,
     linkedIds: [],
     evidenceIds: [],
+    inserts: [],
     createdAt: now,
     updatedAt: now,
     ...over,

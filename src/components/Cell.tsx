@@ -46,8 +46,9 @@ export const Cell = memo(function Cell(p: CellProps) {
       ) : (
         <div className="cell-body" dangerouslySetInnerHTML={{ __html: sanitizeHtml(a.text) || '<span style="color:#55618a">empty</span>' }} />
       )}
-      {(a.notes || a.linkedIds.length > 0 || a.impact || p.hidden > 0) && (
+      {(a.notes || a.linkedIds.length > 0 || a.impact || a.inserts.length > 0 || p.hidden > 0) && (
         <div className="mt-0.5 flex items-center gap-2 text-[10px] text-muted">
+          {a.inserts.length > 0 && <span title={a.inserts.map((i) => `/${i.name}`).join(", ")}>▤ {a.inserts.reduce((n, i) => n + i.entries.length, 0)}</span>}
           {a.notes && <span title={a.notes}>✎ note</span>}
           {a.impact && <span title={a.impact}>⚖ impact</span>}
           {a.linkedIds.length > 0 && <span>⛓ {a.linkedIds.length}</span>}

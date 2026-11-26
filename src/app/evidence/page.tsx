@@ -1,2 +1,2 @@
-import { ComingSoon } from "@/components/ComingSoon";
-export default function Page() { return <ComingSoon title="Evidence Library" phase={2} />; }
+import { EvidenceLibrary } from "@/components/evidence/EvidenceLibrary";
+export default function Page() { return <EvidenceLibrary />; }

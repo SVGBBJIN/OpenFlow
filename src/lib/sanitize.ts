@@ -1,4 +1,4 @@
-const ALLOWED = new Set(["b", "strong", "i", "em", "s", "strike", "mark", "br", "p"]);
+const ALLOWED = new Set(["b", "strong", "i", "em", "s", "strike", "mark", "u", "br", "p"]);
 
 /** Deterministic allow-list sanitiser for the inline HTML we store. */
 export function sanitizeHtml(html: string): string {
@@ -8,7 +8,7 @@ export function sanitizeHtml(html: string): string {
       if (!ALLOWED.has(t)) return "";
       return m.startsWith("</") ? `</${t}>` : `<${t}>`;
     })
-    .replace(/<(?!\/?(?:b|strong|i|em|s|strike|mark|br|p)>)/gi, "&lt;");
+    .replace(/<(?!\/?(?:b|strong|i|em|s|strike|mark|u|br|p)>)/gi, "&lt;");
 }
 
 export function htmlToText(html: string): string {

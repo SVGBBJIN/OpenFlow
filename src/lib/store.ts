@@ -163,7 +163,7 @@ export const useStore = create<S>((set, get) => {
     async openRound(id) {
       if (get().currentId === id) return;
       if (saveTimer) { clearTimeout(saveTimer); saveTimer = null; await flush(); }
-      const args = await loadArgs(id);
+      const args = Object.fromEntries(Object.entries(await loadArgs(id)).map(([k, a]) => [k, normalizeArg(a)]));
       const r = get().rounds[id];
       const first = layoutFlow(args, r?.side ?? "pro", (sid) => r?.speeches.findIndex((s) => s.id === sid) ?? 0).order[0] ?? null;
       set({ currentId: id, args, past: [], future: [], flow: r?.side ?? "pro", selectedId: first, editingId: null, pick: null, lastCreated: null, saveState: "saved" });
@@ -339,4 +339,9 @@ function rootOf(args: ArgMap, id: string): string {
   let cur = args[id];
   while (cur?.parentId && args[cur.parentId]) cur = args[cur.parentId];
   return cur?.id ?? id;
+}
+
+/** Fill fields added in later phases so older saved flows keep loading. */
+export function normalizeArg(a: Arg): Arg {
+  return { ...a, inserts: a.inserts ?? [], evidenceIds: a.evidenceIds ?? [], linkedIds: a.linkedIds ?? [], tags: a.tags ?? [] };
 }

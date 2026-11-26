@@ -4,6 +4,7 @@ import { htmlToText } from "@/lib/sanitize";
 import { useStore } from "@/lib/store";
 import { STATUSES, type Round } from "@/lib/types";
 import { RoundPanel } from "./RoundPanel";
+import { InsertsPanel } from "./InsertsPanel";
 
 export function Inspector({ round }: { round: Round }) {
   const [tab, setTab] = useState<"arg" | "round">("arg");
@@ -61,6 +62,7 @@ function ArgPanel({ round }: { round: Round }) {
         <input className="input" placeholder="add tag, Enter" value={tag} onChange={(e) => setTag(e.target.value)}
           onKeyDown={(e) => { e.stopPropagation(); if (e.key === "Enter" && tag.trim()) { patchArg(a.id, { tags: [...new Set([...a.tags, tag.trim().replace(/^#/, "")])] }); setTag(""); } if (e.key === "Escape") (e.target as HTMLElement).blur(); }} />
       </div>
+      <InsertsPanel argId={a.id} />
       <Area label="Impact comparison" value={a.impact} onSave={(v) => patchArg(a.id, { impact: v })} placeholder="How does this impact compare to the other side's?" />
       <Area label="Notes" value={a.notes} onSave={(v) => patchArg(a.id, { notes: v })} placeholder="Private notes on this argument" />
       <div>
