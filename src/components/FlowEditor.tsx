@@ -6,6 +6,7 @@ import type { Status } from "@/lib/types";
 import { FlowGrid } from "./FlowGrid";
 import { Inspector } from "./Inspector";
 import { Palette } from "./Palette";
+import { RoundTabs } from "./round/RoundShell";
 import { useLib } from "@/lib/lib-store";
 
 const STATUS_ACTIONS: Partial<Record<ActionId, Status>> = {
@@ -29,9 +30,16 @@ export function FlowEditor({ roundId }: { roundId: string }) {
 
   useEffect(() => { if (ready && round) void useStore.getState().openRound(roundId); }, [ready, round, roundId]);
   useEffect(() => { void useLib.getState().load(); }, []);
+  useEffect(() => {
+    if (currentId !== roundId) return;
+    const sel = new URLSearchParams(window.location.search).get("sel");
+    const a = sel ? useStore.getState().args[sel] : null;
+    if (a) { useStore.setState({ flow: a.flow, selectedId: a.id }); }
+  }, [currentId, roundId]);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
+      if (window.location.pathname !== `/rounds/${roundId}`) return;
       const st = useStore.getState();
       if (st.editingId || st.paletteOpen) return;
       const t = e.target as HTMLElement | null;
@@ -77,7 +85,7 @@ export function FlowEditor({ roundId }: { roundId: string }) {
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, []);
+  }, [roundId]);
 
   if (!ready) return <p className="p-6 text-muted">Loading…</p>;
   if (!round) return <p className="p-6 text-muted">Round not found.</p>;
@@ -89,7 +97,9 @@ export function FlowEditor({ roundId }: { roundId: string }) {
     <div className="flex h-full flex-col">
       <header className="flex h-11 shrink-0 items-center gap-3 border-b border-line bg-panel px-3">
         <span className="max-w-64 truncate text-[14px] font-medium">{round.title}</span>
-        <div className="flex rounded-md border border-line2 p-0.5" role="tablist">
+        <RoundTabs roundId={roundId} active="flow" />
+        <span className="text-line2">|</span>
+        <div className="flex rounded-md border border-line2 p-0.5" role="tablist" aria-label="Flow side">
           {(["pro", "con"] as const).map((f) => (
             <button key={f} role="tab" aria-selected={flow === f} onClick={() => useStore.getState().setFlow(f)}
               className={`rounded px-3 py-0.5 text-[12px] ${flow === f ? "bg-raised text-fg" : "text-muted"}`}

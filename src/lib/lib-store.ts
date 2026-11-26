@@ -43,7 +43,7 @@ export const useLib = create<L>((set, get) => {
     async load() {
       if (get().ready) return;
       const d = (await idbGet<LibraryData>(KEY)) ?? { cards: [], folders: [], blocks: [] };
-      set({ cards: Object.fromEntries(d.cards.map((c) => [c.id, c])), folders: d.folders, blocks: Object.fromEntries(d.blocks.map((b) => [b.id, b])), ready: true });
+      set((st) => ({ cards: { ...Object.fromEntries(d.cards.map((c) => [c.id, c])), ...st.cards }, folders: [...d.folders, ...st.folders.filter((f) => !d.folders.some((x) => x.id === f.id))], blocks: { ...Object.fromEntries(d.blocks.map((b) => [b.id, b])), ...st.blocks }, ready: true }));
     },
     snapshot: () => ({ cards: Object.values(get().cards), folders: get().folders, blocks: Object.values(get().blocks) }),
     replaceAll(d) { upd(() => ({ cards: Object.fromEntries(d.cards.map((c) => [c.id, c])), folders: d.folders, blocks: Object.fromEntries(d.blocks.map((b) => [b.id, b])) })); },

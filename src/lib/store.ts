@@ -125,7 +125,7 @@ export const useStore = create<S>((set, get) => {
     async init() {
       if (get().ready) return;
       const list = await loadRounds();
-      set({ rounds: Object.fromEntries(list.map((r) => [r.id, r])), ready: true, keymap: loadKeymap() });
+      set((st) => ({ rounds: { ...Object.fromEntries(list.map((r) => [r.id, r])), ...st.rounds }, ready: true, keymap: loadKeymap() }));
     },
 
     createRound(o) {
