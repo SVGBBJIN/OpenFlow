@@ -6,6 +6,7 @@ import { isEmptyHtml } from "./sanitize";
 import { deleteArgs, loadArgs, loadRounds, saveArgs, saveRounds } from "./storage";
 import { DEFAULT_KEYMAP, loadKeymap, saveKeymap, type Keymap } from "./keymap";
 import { childIndex } from "./layout";
+import { saveVersion, listVersions, type Version } from "./versions";
 import { PF_SPEECHES, type Arg, type ArgMap, type Round, type Side, type Status } from "./types";
 
 export interface Toast { id: string; msg: string; undo?: () => void }
@@ -50,6 +51,8 @@ interface S {
   setStatus(id: string, s: Status): void;
   step(dir: 1 | -1, edit: boolean): void;
   navigateDir(dir: Dir): void;
+  addArgs(list: Arg[]): void;
+  restoreVersion(v: Version): void;
   newContention(): void;
   newSibling(): void;
   newResponse(o?: { isTurn?: boolean; extend?: boolean }): void;
@@ -70,6 +73,7 @@ interface S {
 }
 
 let saveTimer: ReturnType<typeof setTimeout> | null = null;
+const lastAuto: Record<string, number> = {};
 const rnd = () => Math.random().toString(36).slice(2, 9);
 
 export const useStore = create<S>((set, get) => {
@@ -82,7 +86,14 @@ export const useStore = create<S>((set, get) => {
     const { rounds, currentId, args } = get();
     try {
       await saveRounds(Object.values(rounds));
-      if (currentId) await saveArgs(currentId, args);
+      if (currentId) {
+        await saveArgs(currentId, args);
+        const r = rounds[currentId];
+        if (r && Object.keys(args).length > 0 && Date.now() - (lastAuto[currentId] ?? (await listVersions(currentId))[0]?.at ?? 0) > 10 * 60 * 1000) {
+          lastAuto[currentId] = Date.now();
+          await saveVersion(r, args, "Auto-save", true);
+        }
+      }
       if (!saveTimer) set({ saveState: "saved" });
     } catch {
       set({ saveState: "error" });
@@ -238,6 +249,18 @@ export const useStore = create<S>((set, get) => {
       if (!selectedId || !L.placed[selectedId]) { set({ selectedId: L.order[0] ?? null }); return; }
       const t = navigate(L, args, selectedId, dir);
       if (t) set({ selectedId: t });
+    },
+    addArgs(list) {
+      if (!list.length) return;
+      commit({ ...get().args, ...Object.fromEntries(list.map((a) => [a.id, a])) });
+    },
+    restoreVersion(v) {
+      const r = round(); if (!r || get().readOnly) return;
+      void saveVersion(r, get().args, "Before restore", true);
+      get().updateRound(r.id, { speeches: v.round.speeches, plans: v.round.plans, review: v.round.review, title: v.round.title });
+      commit({ ...v.args });
+      set({ selectedId: null, editingId: null });
+      get().toast(`Restored “${v.label || "version"}”`, () => get().undo());
     },
     newContention() {
       const r = round(); if (!r) return;

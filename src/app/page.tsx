@@ -2,11 +2,16 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useStore } from "@/lib/store";
-import { RoundRow } from "@/components/RoundList";
+import { RoundRow, ago } from "@/components/RoundList";
+import { useDocs } from "@/lib/docs-store";
+import { useEffect } from "react";
 
 export default function Dashboard() {
   const { rounds, ready, createRound } = useStore();
   const router = useRouter();
+  const docs = useDocs((s) => s.docs);
+  useEffect(() => { void useDocs.getState().load(); }, []);
+  const recentDocs = Object.values(docs).sort((a, b) => b.updatedAt - a.updatedAt).slice(0, 4);
   const list = Object.values(rounds).filter((r) => !r.deletedAt).sort((a, b) => b.updatedAt - a.updatedAt);
 
   return (
@@ -34,17 +39,21 @@ export default function Dashboard() {
             <p className="p-4 text-muted">No rounds yet. Quick-create one and start flowing — press <span className="kbd">Enter</span> to add your first argument.</p>
           ) : list.slice(0, 6).map((r) => <RoundRow key={r.id} r={r} />)}
         </div>
-        <div className="mt-6 grid gap-4 md:grid-cols-3">
-          {[
-            ["Shared rounds", "Partner collaboration arrives in Phase 4."],
-            ["Speech documents", "Document builder arrives in Phase 3."],
-            ["Evidence & blocks", "Libraries arrive in Phase 2."],
-          ].map(([t, d]) => (
-            <div key={t} className="rounded-md border border-line bg-panel p-3">
-              <div className="label">{t}</div>
-              <p className="mt-1 text-[13px] text-muted">{d}</p>
-            </div>
-          ))}
+        <div className="mt-6 grid gap-4 md:grid-cols-2">
+          <div className="rounded-md border border-line bg-panel p-3">
+            <div className="label mb-1">Recently edited flows</div>
+            {list.slice(0, 4).map((r) => <Link key={r.id} href={`/rounds/${r.id}`} className="flex justify-between py-0.5 text-[13px] hover:text-accent"><span className="truncate">{r.title}</span><span className="text-muted">{ago(r.updatedAt)}</span></Link>)}
+            {list.length === 0 && <p className="text-[13px] text-muted">None yet.</p>}
+          </div>
+          <div className="rounded-md border border-line bg-panel p-3">
+            <div className="label mb-1">Recent speech documents</div>
+            {recentDocs.map((d) => <Link key={d.id} href={`/documents/${d.id}`} className="flex justify-between py-0.5 text-[13px] hover:text-accent"><span className="truncate">{d.title}</span><span className="text-muted">{ago(d.updatedAt)}</span></Link>)}
+            {recentDocs.length === 0 && <p className="text-[13px] text-muted">None yet.</p>}
+          </div>
+          <div className="rounded-md border border-line bg-panel p-3 md:col-span-2">
+            <div className="label mb-1">Shared rounds</div>
+            <p className="text-[13px] text-muted">Rounds partners share with you appear under <Link className="text-accent underline" href="/shared">Shared With Me</Link> (needs cloud accounts).</p>
+          </div>
         </div>
       </div>
     </div>

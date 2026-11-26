@@ -4,7 +4,7 @@ import { parseCitation } from "./cite";
 import type { EvidenceCard } from "./library";
 
 interface Run { text: string; b: boolean; i: boolean; u: boolean; s: boolean; hl: boolean }
-interface Para { style: string; runs: Run[] }
+interface Para { style: string; runs: Run[]; bullet?: boolean; ilvl?: number }
 
 const W = "http://schemas.openxmlformats.org/wordprocessingml/2006/main";
 const flag = (el: Element | null, tag: string) => {
@@ -22,6 +22,8 @@ export async function readDocxParagraphs(data: ArrayBuffer | Uint8Array): Promis
   const paras: Para[] = [];
   for (const p of Array.from(doc.getElementsByTagNameNS(W, "p"))) {
     const style = p.getElementsByTagNameNS(W, "pStyle")[0]?.getAttributeNS(W, "val") ?? "";
+    const numPr = p.getElementsByTagNameNS(W, "numPr")[0];
+    const ilvl = Number(numPr?.getElementsByTagNameNS(W, "ilvl")[0]?.getAttributeNS(W, "val") ?? 0);
     const runs: Run[] = [];
     for (const r of Array.from(p.getElementsByTagNameNS(W, "r"))) {
       const rpr = r.getElementsByTagNameNS(W, "rPr")[0] ?? null;
@@ -35,7 +37,7 @@ export async function readDocxParagraphs(data: ArrayBuffer | Uint8Array): Promis
       if (!text) continue;
       runs.push({ text, b: flag(rpr, "b"), i: flag(rpr, "i"), u: flag(rpr, "u"), s: flag(rpr, "strike"), hl: flag(rpr, "highlight") });
     }
-    paras.push({ style, runs });
+    paras.push({ style, runs, bullet: !!numPr || /list/i.test(style), ilvl });
   }
   return paras;
 }
@@ -89,4 +91,9 @@ export function paragraphsToCards(paras: Para[]): Partial<EvidenceCard>[] {
 
 export async function importDocx(data: ArrayBuffer | Uint8Array) {
   return paragraphsToCards(await readDocxParagraphs(data));
+}
+
+/** Paragraphs for speech import: html (formatting kept), plain text, bullet flag and list level. */
+export async function importDocxParagraphs(data: ArrayBuffer | Uint8Array) {
+  return (await readDocxParagraphs(data)).map((p) => ({ html: `<p>${runsToHtml(p.runs)}</p>`, text: plain(p), bullet: !!p.bullet, indent: p.ilvl ?? 0 }));
 }

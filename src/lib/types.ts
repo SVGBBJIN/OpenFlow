@@ -58,6 +58,8 @@ export interface Review {
   opponentStrategy: string; observations: string;
   /** Entered by the user; never computed. */
   result: "" | "win" | "loss";
+  /** Per-argument review notes keyed by argument id. */
+  argNotes?: Record<string, string>;
 }
 export const emptyPlan = (): SpeechPlan => ({ items: [], weighingNotes: "", narrative: "", impactCalculus: "" });
 export const emptyReview = (): Review => ({ judge: "", ballot: "", rfd: "", judgeFeedback: "", opponentStrategy: "", observations: "", result: "" });

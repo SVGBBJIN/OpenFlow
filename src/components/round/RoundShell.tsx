@@ -5,12 +5,13 @@ import { useStore } from "@/lib/store";
 import { useLib } from "@/lib/lib-store";
 import { PresenceBar } from "./PresenceBar";
 
-export type RoundTab = "flow" | "summary" | "final-focus" | "tracker" | "review" | "share";
+export type RoundTab = "flow" | "summary" | "final-focus" | "tracker" | "import" | "review" | "share";
 const TABS: { id: RoundTab; label: string; href: (id: string) => string }[] = [
   { id: "flow", label: "Flow", href: (id) => `/rounds/${id}` },
   { id: "summary", label: "Summary", href: (id) => `/rounds/${id}/summary` },
   { id: "final-focus", label: "Final Focus", href: (id) => `/rounds/${id}/final-focus` },
   { id: "tracker", label: "Tracker", href: (id) => `/rounds/${id}/tracker` },
+  { id: "import", label: "Import speech", href: (id) => `/rounds/${id}/import` },
   { id: "review", label: "Review", href: (id) => `/rounds/${id}/review` },
   { id: "share", label: "Share", href: (id) => `/rounds/${id}/share` },
 ];

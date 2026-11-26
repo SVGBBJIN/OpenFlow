@@ -108,7 +108,12 @@ export function CellEditor({ id, initial }: { id: string; initial: string }) {
   });
 
   // Focus synchronously on mount so fast typists never lose the first keystrokes.
-  useLayoutEffect(() => { editor?.commands.focus("end"); }, [editor]);
+  useLayoutEffect(() => {
+    if (!editor || editor.isDestroyed) return;
+    // Tiptap's focus() command defers to requestAnimationFrame; focus the DOM synchronously instead.
+    editor.view.focus();
+    editor.commands.setTextSelection(editor.state.doc.content.size);
+  }, [editor]);
   useEffect(() => () => { if (timer.current) clearTimeout(timer.current); }, []);
   // Refocus after the command palette closes.
   const paletteOpen = useStore((s) => s.paletteOpen);
